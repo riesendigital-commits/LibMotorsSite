@@ -15,7 +15,10 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: "dist/spa",
   },
-  plugins: [react(), expressPlugin()],
+plugins: [
+  react(),
+  ...(mode === "development" ? [expressPlugin()] : []),
+],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./client"),
@@ -27,13 +30,14 @@ export default defineConfig(({ mode }) => ({
 function expressPlugin(): Plugin {
   return {
     name: "express-plugin",
-    apply: "serve", // dev only
+    apply: "serve",
     async configureServer(server) {
-      const { createServer } = await import("./server/index");
-      const app = createServer();
+      const serverModule = await import(
+        new URL("./server/index.ts", import.meta.url).href
+      );
 
+      const app = serverModule.createServer();
       server.middlewares.use(app);
     },
   };
 }
-
